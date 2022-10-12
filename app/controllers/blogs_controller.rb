@@ -60,6 +60,6 @@ class BlogsController < ApplicationController
   end
 
   def verify_access_right_of_blog
-    raise ActiveRecord::RecordNotFound, '該当ブログが見つかりませんでした' unless verify_blog_owner || !@blog.secret
+    raise ActiveRecord::RecordNotFound, '該当ブログが見つかりませんでした' if !@blog.owned_by?(current_user) && @blog.secret
   end
 end
