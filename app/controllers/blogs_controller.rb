@@ -3,9 +3,8 @@
 class BlogsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[index show]
 
-  before_action :set_blog, only: %i[show edit update destroy]
-  before_action :verify_access_right_of_blog, only: %i[show]
-  before_action :verify_blog_owner, only: %i[edit update destroy]
+  before_action :set_onwers_blog, only: %i[edit update destroy]
+  before_action :set_blog, only: %i[show]
 
   def index
     @blogs = Blog.search(params[:term]).published.default_order
@@ -46,20 +45,23 @@ class BlogsController < ApplicationController
   private
 
   def set_blog
-    @blog = Blog.find(params[:id])
+    blog = Blog.find(params[:id])
+
+    @blog =
+      if blog.owned_by?(current_user)
+        blog
+      else
+        Blog.published.find(params[:id])
+      end
+  end
+
+  def set_onwers_blog
+    @blog = current_user.blogs.find(params[:id])
   end
 
   def blog_params
     filter_list = %i[title content secret]
     filter_list.push(:random_eyecatch) if current_user.premium
     params.require(:blog).permit(filter_list)
-  end
-
-  def verify_blog_owner
-    raise ActiveRecord::RecordNotFound, '該当ブログが見つかりませんでした' unless @blog.owned_by?(current_user)
-  end
-
-  def verify_access_right_of_blog
-    raise ActiveRecord::RecordNotFound, '該当ブログが見つかりませんでした' if !@blog.owned_by?(current_user) && @blog.secret
   end
 end
