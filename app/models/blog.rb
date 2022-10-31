@@ -17,7 +17,7 @@ class Blog < ApplicationRecord
 
   scope :viewable, lambda { |user|
     if user
-      where('user_id = ? OR secret = FALSE', user.id)
+      where('user_id = ?', user.id).or(published)
     else
       published
     end
